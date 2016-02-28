@@ -1,0 +1,14 @@
+{
+  "name": "angular-chosen-js",
+  "homepage": "https://github.com/adityasharat/angular-chosen",
+  "_release": "003d29c9e9",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "003d29c9e9f0f7fbbd55c74114a9cebd77e8f1ae"
+  },
+  "_source": "git://github.com/adityasharat/angular-chosen.git",
+  "_target": "*",
+  "_originalSource": "angular-chosen-js",
+  "_direct": true
+}

@@ -1,47 +1,18 @@
 'use strict';
 
-var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.chosen'])
+angular.module('myContacts.contacts', ['ngRoute', 'firebase'])
 
-    .config(['$routeProvider', function ($routeProvider) {
+    .config(['$routeProvider', '$locationProvider', function ($routeProvider,$locationProvider) {
 
         $routeProvider
             .when('/contacts', {
                 templateUrl: 'contacts/contacts.html',
                 controller: 'ContactsCtrl'
-            })
-            .when('/contact_form', {
-                templateUrl: 'contacts/contact-form.html',
-                controller: 'ContactFormCtrl'
             });
     }])
 
-    // ContactFormCtrl Controller
-    .controller('ContactFormCtrl', ['$scope', '$firebaseArray','$http', function ($scope, $firebaseArray,$http) {
-
-        mod.directive('chosen',function(){
-            var Linker = function(scope, element, attr){
-                scope.$watch('skillList',function(){
-                    element.trigger('liszt:updated');
-                })
-                element.chosen();
-            };
-            return {
-                restrict : 'A',
-                link:Linker
-            }
-        });
-
-        $scope.url = 'contacts/skills.json';
-        $scope.skillList = [];
-
-        $scope.fetchList = function(){
-            $http.get($scope.url).success(function (result) {
-                $scope.skillList = result;
-            });
-        }
-        $scope.fetchList();
-
-
+    // Contacts Controller
+    .controller('ContactsCtrl', ['$scope', '$firebaseArray', function ($scope, $firebaseArray) {
         // Init Firebase
         var firebase_ref = new Firebase('https://aolakh-contacts.firebaseio.com/contacts');
 
@@ -69,6 +40,8 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
             if ($scope.email) { var email = $scope.email; } else { var email = null; }
             if ($scope.company) { var company = $scope.company; } else { var company = null; }
             if ($scope.mobile_phone) { var mobile_phone = $scope.mobile_phone; } else { var mobile_phone = null; }
+            if ($scope.home_phone) { var home_phone = $scope.home_phone; } else { var home_phone = null; }
+            if ($scope.work_phone) { var work_phone = $scope.work_phone; } else { var work_phone = null; }
             if ($scope.street_address) { var street_address = $scope.street_address; } else { var street_address = null; }
             if ($scope.city) { var city = $scope.city; } else { var city = null; }
             if ($scope.state) { var state = $scope.state; } else { var state = null; }
@@ -80,7 +53,13 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
                 name : name ,
                 email : email ,
                 company : company,
-                mobile_phone : mobile_phone,
+                phones : [
+                    {
+                        mobile : mobile_phone,
+                        home : home_phone,
+                        work : work_phone
+                    }
+                ],
                 address : [
                     {
                         street_address : street_address,
@@ -101,54 +80,7 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
 
                 // Send Message
                 $scope.message = "Contact added";
-
-                setTimeout(function(){
-                   $('.alert-box').fadeTo(500, 0).slideUp(400);
-                }, 4000);
             });
-        }
-
-
-
-        // method to clear fields
-        function clearFields(){
-            console.log('Clearing Form Data');
-
-            $scope.name="";
-            $scope.email="";
-            $scope.company="";
-            $scope.mobile_phone="";
-            $scope.home_phone="";
-            $scope.work_phone="";
-            $scope.street_address="";
-            $scope.city="";
-            $scope.state="";
-            $scope.zip="";
-        }
-    }])
-
-    // Contacts Controller
-    .controller('ContactsCtrl', ['$scope', '$firebaseArray', function ($scope, $firebaseArray) {
-        // Init Firebase
-        var firebase_ref = new Firebase('https://aolakh-contacts.firebaseio.com/contacts');
-
-        // get Contacts
-        $scope.contacts = $firebaseArray(firebase_ref);
-
-        //Display Contacts
-        $scope.showContact =function(contact){
-            console.log('Displaying Contact...');
-
-            $scope.name = contact.name;
-            $scope.email = contact.email;
-            $scope.company = contact.company;
-            $scope.mobile_phone = contact.mobile_phone;
-            $scope.street_address = contact.address[0].street_address;
-            $scope.city = contact.address[0].city;
-            $scope.state = contact.address[0].state;
-            $scope.zip = contact.address[0].zip;
-
-            $scope.contactShow = true ;
         }
 
         // Show Edit form
@@ -159,7 +91,9 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
             $scope.name = contact.name;
             $scope.email = contact.email;
             $scope.company = contact.company;
-            $scope.mobile_phone = contact.mobile_phone;
+            $scope.mobile_phone = contact.phones[0].mobile;
+            $scope.home_phone = contact.phones[0].home;
+            $scope.work_phone = contact.phones[0].work;
             $scope.street_address = contact.address[0].street_address;
             $scope.city = contact.address[0].city;
             $scope.state = contact.address[0].state;
@@ -181,7 +115,9 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
             record.name = $scope.name;
             record.email = $scope.email;
             record.company = $scope.company;
-            record.mobile_phone = $scope.mobile_phone;
+            record.phones[0].work = $scope.work_phone;
+            record.phones[0].home = $scope.home_phone;
+            record.phones[0].mobile = $scope.mobile_phone;
             record.address[0].street_address = $scope.street_address;
             record.address[0].city = $scope.city;
             record.address[0].state = $scope.state;
@@ -197,16 +133,9 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
 
             // Hide Form
             $scope.editFormShow = false;
-            
-            // Hide Single contact show area
-            $scope.contactShow = false;
 
             // Send Message
             $scope.message = "Contact updated";
-
-            setTimeout(function(){
-                $('.alert-box').fadeTo(500, 0).slideUp(400);
-            }, 4000);
 
 
         }
@@ -216,10 +145,22 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
             $scope.contacts.$remove(contact);
         }
 
-        // Hide Add form
-        $scope.hideForm = function () {
-            $scope.addFormShow = false;
-            $scope.contactShow = false;
+        //Display Contacts
+        $scope.showContact =function(contact){
+            console.log('Displaying Contact...');
+
+            $scope.name = contact.name;
+            $scope.email = contact.email;
+            $scope.company = contact.company;
+            $scope.mobile_phone = contact.phones[0].mobile;
+            $scope.home_phone = contact.phones[0].home;
+            $scope.work_phone = contact.phones[0].work;
+            $scope.street_address = contact.address[0].street_address;
+            $scope.city = contact.address[0].city;
+            $scope.state = contact.address[0].state;
+            $scope.zip = contact.address[0].zip;
+
+            $scope.contactShow = true ;
         }
 
         // method to clear fields
@@ -237,17 +178,4 @@ var mod = angular.module('myContacts.contacts', ['ngRoute', 'firebase','angular.
             $scope.state="";
             $scope.zip="";
         }
-
     }]);
-function getSkillList($scope,$http){
-    $scope.url = 'contacts/skills.json';
-    $scope.skillList = [];
-
-    $scope.fetchList = function(){
-        $http.get($scope.url).then(function (result) {
-            $scope.skillList = result.data;
-        });
-    }
-    $scope.fetchList();
-}
-
